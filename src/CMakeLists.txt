@@ -7,4 +7,4 @@ add_library(core
             simulation/SimulationEngine.cpp)
 
 
-target_include_directories(core PRIVATE include)
+target_include_directories(core PRIVATE ../include)

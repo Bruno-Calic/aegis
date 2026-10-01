@@ -1,4 +1,4 @@
-#include "../../include/aegis/simulation/SimulationEngine.hpp"
+#include "aegis/simulation/SimulationEngine.hpp"
 
 namespace aegis {
 

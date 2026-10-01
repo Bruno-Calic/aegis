@@ -1,4 +1,4 @@
-#include "../../include/aegis/pathfinding/PathFinder.hpp"
+#include "aegis/pathfinding/PathFinder.hpp"
 #include <queue>
 #include <limits>
 #include <unordered_map>

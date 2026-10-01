@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "../include/aegis/Scenario.hpp"
-#include "../include/aegis/simulation/SimulationEngine.hpp"
+#include "aegis/Scenario.hpp"
+#include "aegis/simulation/SimulationEngine.hpp"
 
 using namespace aegis;
 

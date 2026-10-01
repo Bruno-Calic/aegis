@@ -39,6 +39,9 @@ if(TARGET GTest::gtest_main)
                         tests/SimulationTests.cpp
                         #${AEGIS_CORE_SOURCES}
                         )
+
+      target_include_directories(aegis_tests PRIVATE include)
+      
       target_link_libraries(aegis_tests PRIVATE
                               GTest::gtest_main
                               #programs
@@ -46,4 +49,5 @@ if(TARGET GTest::gtest_main)
                               )
       include(GoogleTest)
       gtest_discover_tests(aegis_tests)
+
 endif()

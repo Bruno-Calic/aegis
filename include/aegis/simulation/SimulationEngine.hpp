@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Scenario.hpp"
-#include "../graph/BuildingGraph.hpp"
-#include "../pathfinding/PathFinder.hpp"
+#include "aegis/Scenario.hpp"
+#include "aegis/graph/BuildingGraph.hpp"
+#include "aegis/pathfinding/PathFinder.hpp"
 
 namespace aegis {
 

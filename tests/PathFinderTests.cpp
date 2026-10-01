@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "../include/aegis/graph/BuildingGraph.hpp"
-#include "../include/aegis/pathfinding/PathFinder.hpp"
+#include "aegis/graph/BuildingGraph.hpp"
+#include "aegis/pathfinding/PathFinder.hpp"
 
 using namespace aegis;
 

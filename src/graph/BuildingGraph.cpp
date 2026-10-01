@@ -1,4 +1,4 @@
-#include "../../include/aegis/graph/BuildingGraph.hpp"
+#include "aegis/graph/BuildingGraph.hpp"
 #include <stdexcept>
 
 namespace aegis {

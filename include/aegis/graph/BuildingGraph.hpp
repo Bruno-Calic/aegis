@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Node.hpp"
-#include "../Edge.hpp"
+#include "aegis/Node.hpp"
+#include "aegis/Edge.hpp"
 #include <unordered_map>
 #include <vector>
 

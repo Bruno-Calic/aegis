@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../graph/BuildingGraph.hpp"
+#include "aegis/graph/BuildingGraph.hpp"
 #include <vector>
 #include <optional>
 

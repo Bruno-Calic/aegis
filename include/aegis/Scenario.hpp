@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Node.hpp"
-#include "Edge.hpp"
-#include "Agent.hpp"
+#include "aegis/Node.hpp"
+#include "aegis/Edge.hpp"
+#include "aegis/Agent.hpp"
 #include <vector>
 #include <string>
 
