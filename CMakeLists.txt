@@ -18,6 +18,7 @@ set(AEGIS_CORE_SOURCES
       )
 add_executable(${PROJECT_NAME} 
                 main.cpp
+                src/programs.cpp
             #${AEGIS_CORE_SOURCES}
                 )
 

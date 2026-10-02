@@ -1,6 +1,7 @@
 #include <iostream>
 #include "aegis/Scenario.hpp"
 #include "aegis/simulation/SimulationEngine.hpp"
+#include "aegis/pathfinding/PathFinder.hpp"
 #include <iomanip>
 
 void printHelloWorld() {
@@ -126,5 +127,28 @@ int test_2(){
     //Scenario agenti
     scenario.agents = {a1};
 
+    //pokretanje simulacije
+    SimulationEngine engine;
+    engine.initialize(scenario);
     
+    std::cout << "=== Aegis Simulacija ===\n";
+    std::cout << "Scenarij: " << scenario.name << "\n";
+    std::cout << "========================\n\n";
+
+    //simulacija i obrada
+    engine.step(0.25);
+
+    //OBRADA//
+
+    if(engine.isFinished()){
+        std::cout << "Simulacija je završila.\n";
+        std::cout << "Ukupno vrijeme: " << engine.state().currentTime << " s\n";
+        std::cout << "Evakuirano: " << engine.state().evacuatedCount << "\n";
+        std::cout << "Zarobljeno: " << engine.state().trappedCount << "\n";
+        std::cout << "Ukupno koraka: " << engine.state().currentTime / 0.25 << "\n";
+    } else {
+        std::cout << "Simulacija još uvijek traje.\n";
+    }
+
+    return 0;
 }
