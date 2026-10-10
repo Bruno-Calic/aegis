@@ -1,4 +1,5 @@
 #include "aegis/simulation/SimulationEngine.hpp"
+#include <algorithm>
 
 namespace aegis {
 
@@ -6,6 +7,7 @@ void SimulationEngine::initialize(const Scenario& scenario) {
     state_ = SimulationState{};
     state_.nodes = scenario.nodes;
     state_.edges = scenario.edges;
+    state_.agents = scenario.agents;  // <-- OVO JE KLJUČNO
 
     for (const auto& node : scenario.nodes) {
         if (node.type == NodeType::Exit) {
@@ -13,6 +15,7 @@ void SimulationEngine::initialize(const Scenario& scenario) {
         }
     }
 
+    graph_ = BuildingGraph{};
     for (const auto& node : scenario.nodes) {
         graph_.addNode(node);
     }
@@ -22,6 +25,9 @@ void SimulationEngine::initialize(const Scenario& scenario) {
 
     state_.running = true;
     state_.finished = false;
+    state_.currentTime = 0.0;
+    state_.evacuatedCount = 0;
+    state_.trappedCount = 0;
 }
 
 void SimulationEngine::step(double deltaTime) {
@@ -32,6 +38,12 @@ void SimulationEngine::step(double deltaTime) {
     state_.currentTime += deltaTime;
 
     for (auto& agent : state_.agents) {
+        // Preskoči već evakuirane ili zarobljene
+        if (agent.state == AgentState::Evacuated ||
+            agent.state == AgentState::Trapped) {
+            continue;
+        }
+
         if (agent.currentNode == -1) {
             continue;
         }
@@ -57,9 +69,11 @@ void SimulationEngine::step(double deltaTime) {
         int nextNode = path.nodePath[1];
         agent.currentNode = nextNode;
         agent.path = path.nodePath;
+        agent.pathIndex = 1;
     }
 
-    if (state_.evacuatedCount + state_.trappedCount == static_cast<int>(state_.agents.size())) {
+    if (state_.evacuatedCount + state_.trappedCount ==
+        static_cast<int>(state_.agents.size())) {
         state_.finished = true;
         state_.running = false;
     }

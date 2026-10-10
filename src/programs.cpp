@@ -123,9 +123,13 @@ int test_2(){
     a1.id = 1;
     a1.currentNode = 1;
     a1.state = AgentState::Initial;
-    
+    Agent a2;
+    a2.id = 2;
+    a2.currentNode = 2;
+    a2.state = AgentState::Initial;
+
     //Scenario agenti
-    scenario.agents = {a1};
+    scenario.agents = {a1, a2};
 
     //pokretanje simulacije
     SimulationEngine engine;
@@ -136,7 +140,7 @@ int test_2(){
     std::cout << "========================\n\n";
 
     //simulacija i obrada
-    engine.step(0.25);
+    engine.runUntilFinished();
 
     //OBRADA//
 

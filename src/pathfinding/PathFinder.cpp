@@ -21,19 +21,22 @@ PathResult PathFinder::dijkstra(
     const Dist INF = std::numeric_limits<Dist>::infinity();
 
     std::unordered_map<int, Dist> dist;
-    std::unordered_map<int, int> previous; 
+    std::unordered_map<int, int> previous;
 
     dist[startNode] = 0.0;
 
-    using PQEntry = std::pair<Dist, int>; // (distance, node)
-    std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<>> pq; // Min-heap priority queue
+    using PQEntry = std::pair<Dist, int>;
+    std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<>> pq;
     pq.emplace(0.0, startNode);
 
     while (!pq.empty()) {
         auto [d, u] = pq.top();
         pq.pop();
 
-        if (d > dist[u]) {
+        // POPRAVAK: dist[u] može biti default (0.0) ako čvor nije bio u mapi,
+        // pa koristimo find() umjesto operator[].
+        auto du = dist.find(u);
+        if (du == dist.end() || d > du->second) {
             continue;
         }
 
@@ -47,9 +50,11 @@ PathResult PathFinder::dijkstra(
             }
 
             int v = (edge.from == u) ? edge.to : edge.from;
-            Dist newDist = dist[u] + edge.traversalTime;
+            Dist newDist = du->second + edge.traversalTime;  // at() umjesto []
 
-            if (newDist < dist[v]) {
+            // POPRAVAK: dist[v] preko operator[] default-konstruira na 0.0, ne INF.
+            auto it = dist.find(v);
+            if (it == dist.end() || newDist < it->second) {
                 dist[v] = newDist;
                 previous[v] = u;
                 pq.emplace(newDist, v);
@@ -62,7 +67,7 @@ PathResult PathFinder::dijkstra(
     }
 
     result.found = true;
-    result.totalCost = dist[targetNode];
+    result.totalCost = dist.at(targetNode);
 
     int current = targetNode;
     while (current != startNode) {
