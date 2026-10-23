@@ -3,6 +3,11 @@
 #include "aegis/simulation/SimulationEngine.hpp"
 #include "aegis/pathfinding/PathFinder.hpp"
 #include <iomanip>
+#include <imgui.h>
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include <implot.h>
+#include <GLFW/glfw3.h>
 
 void printHelloWorld() {
     std::cout << "Hello, World!" << std::endl;
@@ -162,9 +167,13 @@ int test_2(){
         
         // Ispiši poziciju agenata
         for (const auto& agent : engine.state().agents) {
-            std::cout << "  Agent " << agent.id 
-                    << " je na čvoru " << agent.currentNode;
-            
+
+            if (agent.currentEdge != -1) {
+                std::cout << "  Agent " << agent.id << " je NA BRIDU " << agent.currentEdge << "\n";
+            }
+            else {
+                std::cout << "  Agent " << agent.id << " je na čvoru " << agent.currentNode << "\n";
+            }
             if (agent.state == AgentState::Evacuated) {
                 std::cout << " [EVAKUIRAN]";
             } else if (agent.state == AgentState::Trapped) {
@@ -205,6 +214,49 @@ int test_2(){
         std::cout << "Simulacija još uvijek traje.\n";
     }
 
+
+    return 0;
+}
+
+
+int test_window() {
+    glfwInit();
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Aegis Viewer", nullptr, nullptr);
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+
+    ImGui::CreateContext();
+    ImPlot::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130");
+
+    while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Begin("Aegis Simulacija");
+        ImGui::Text("Ovdje ce doci canvas s grafom");
+        if (ImGui::Button("Korak")) { /* engine.step(0.25) */ }
+        ImGui::End();
+
+        ImGui::Render();
+        int w, h;
+        glfwGetFramebufferSize(window, &w, &h);
+        glViewport(0, 0, w, h);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glfwSwapBuffers(window);
+    }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImPlot::DestroyContext();
+    ImGui::DestroyContext();
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
     return 0;
 }

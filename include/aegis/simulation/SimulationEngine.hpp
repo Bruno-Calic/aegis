@@ -18,7 +18,7 @@ struct SimulationState {
     std::vector<Agent> agents;
     std::vector<int> exits;
 
-    // NOVO: Praćenje zauzeća bridova
+    //Praćenje zauzeća bridova
     std::unordered_map<int, int> edgeOccupancy;
 
     int evacuatedCount = 0;
@@ -34,7 +34,7 @@ public:
     const SimulationState& state() const;
     bool isFinished() const;
 
-    // NOVO: Dohvati gužvu za brid
+    //Dohvati gužvu za brid
     EdgeCongestion getEdgeCongestion(int edgeId) const;
 
 private:

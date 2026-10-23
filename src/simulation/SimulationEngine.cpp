@@ -50,64 +50,75 @@ void SimulationEngine::step(double deltaTime) {
 
     state_.currentTime += deltaTime;
 
-    // Ažuriraj gužvu prije obrade agenata
-    congestionModel_.update(state_.edgeOccupancy, graph_.edges());
-
+    // A) Agenti u tranziciji preko brida: odmotaj vrijeme prelaska
     for (auto& agent : state_.agents) {
-        // Preskoči već evakuirane ili zarobljene agente
-        if (agent.state == AgentState::Evacuated || 
+        if (agent.state == AgentState::Evacuated ||
             agent.state == AgentState::Trapped) {
             continue;
         }
+        if (agent.currentEdge == -1) {
+            continue; // nije na bridu
+        }
 
-        if (agent.currentNode == -1) {
+        // Gušći brid = manji speedMultiplier = sporije odmotavanje vremena
+        double mult = congestionModel_
+            .getEdgeCongestion(agent.currentEdge).speedMultiplier;
+        agent.remainingTime -= deltaTime * mult;
+
+        if (agent.remainingTime <= 0.0) {
+            // Agent je stigao: oslobodi kapacitet, prebaci ga na sljedeći čvor
+            auto& occ = state_.edgeOccupancy[agent.currentEdge];
+            if (occ > 0) occ--;
+
+            agent.currentNode = agent.path[agent.pathIndex + 1];
+            agent.pathIndex++;
+            agent.currentEdge = -1;
+            agent.remainingTime = 0.0;
+        }
+    }
+
+    // B) Agenti na čvoru: provjera izlaza, routing, ulazak na brid
+    for (auto& agent : state_.agents) {
+        if (agent.state == AgentState::Evacuated ||
+            agent.state == AgentState::Trapped) {
             continue;
         }
-
-        // Provjeri je li agent već na izlazu
-        bool isOnExit = false;
-        for (int exitId : state_.exits) {
-            if (agent.currentNode == exitId) {
-                isOnExit = true;
-                break;
-            }
+        if (agent.currentEdge != -1) {
+            continue; // jos je na bridu, ne diraj ga
         }
 
+        bool isOnExit = false;
+        for (int exitId : state_.exits) {
+            if (agent.currentNode == exitId) { isOnExit = true; break; }
+        }
         if (isOnExit) {
             agent.state = AgentState::Evacuated;
+            agent.evacuationTime = state_.currentTime;
             state_.evacuatedCount++;
             continue;
         }
 
-        // Pronađi najkraći put do bilo kojeg izlaza
         PathResult bestPath;
         for (int exitId : state_.exits) {
             PathResult path = pathFinder_.dijkstra(graph_, agent.currentNode, exitId);
-            if (path.found) {
-                if (!bestPath.found || path.totalCost < bestPath.totalCost) {
-                    bestPath = path;
-                }
+            if (path.found && (!bestPath.found || path.totalCost < bestPath.totalCost)) {
+                bestPath = path;
             }
         }
-
-        // Ako nema puta, agent je zarobljen
         if (!bestPath.found) {
             agent.state = AgentState::Trapped;
             state_.trappedCount++;
             continue;
         }
 
-        // Ažuriraj put ako je novi ili prazan
         if (agent.path.empty() || agent.path != bestPath.nodePath) {
             agent.path = bestPath.nodePath;
             agent.pathIndex = 0;
         }
 
-        // Provjeri kapacitet sljedećeg brida
-        if (agent.pathIndex < bestPath.nodePath.size() - 1) {
-            int nextNode = bestPath.nodePath[agent.pathIndex + 1];
-            
-            // Pronađi brid između trenutnog i sljedećeg čvora
+        if (agent.pathIndex < agent.path.size() - 1) {
+            int nextNode = agent.path[agent.pathIndex + 1];
+
             Edge* nextEdge = nullptr;
             for (auto& edge : state_.edges) {
                 if ((edge.from == agent.currentNode && edge.to == nextNode) ||
@@ -116,22 +127,16 @@ void SimulationEngine::step(double deltaTime) {
                     break;
                 }
             }
-            
+
             if (nextEdge) {
-                // Provjeri kapacitet
                 int occupancy = state_.edgeOccupancy[nextEdge->id];
-                
-                if (occupancy < nextEdge->capacity) {
-                    // Prolaz je slobodan, pomakni agenta
-                    agent.pathIndex++;
-                    agent.currentNode = nextNode;
-                    
-                    // Povećaj zauzeće na novom bridu
+                if (!nextEdge->blocked && occupancy < nextEdge->capacity) {
+                    // NE pomiči currentNode ovdje — agent je sada NA bridu
+                    agent.currentEdge = nextEdge->id;
+                    agent.remainingTime = nextEdge->traversalTime;
                     state_.edgeOccupancy[nextEdge->id] = occupancy + 1;
-                    
                     agent.state = AgentState::Moving;
                 } else {
-                    // Prolaz je pun, agent čeka
                     agent.state = AgentState::Waiting;
                     agent.waitingTime += deltaTime;
                 }
@@ -139,29 +144,23 @@ void SimulationEngine::step(double deltaTime) {
         }
     }
 
-    // Smanji zauzeće na svim bridovima na kraju koraka
-    // (agenti koji su prošli kroz brid u ovom koraku napuštaju ga)
-    for (auto& [edgeId, occupancy] : state_.edgeOccupancy) {
-        if (occupancy > 0) {
-            occupancy--;
-        }
-    }
+    // C) UKLONI staru petlju koja je sve dekrementirala!
 
-    // Provjeri je li gotovo
+    // D) update() na KRAJU koraka — ispis onda vidi stvarno trenutno stanje
+    congestionModel_.update(state_.edgeOccupancy, graph_.edges());
+
     int activeCount = 0;
     for (const auto& agent : state_.agents) {
-        if (agent.state != AgentState::Evacuated && 
+        if (agent.state != AgentState::Evacuated &&
             agent.state != AgentState::Trapped) {
             activeCount++;
         }
     }
-
     if (activeCount == 0) {
         state_.finished = true;
         state_.running = false;
     }
 }
-
 void SimulationEngine::runUntilFinished() {
     while (!state_.finished) {
         step(0.25);
