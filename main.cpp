@@ -5,6 +5,6 @@
 #include "main.hpp"
 
 int main() {
-    test_2();
+    test_4();
     return 0;
 }

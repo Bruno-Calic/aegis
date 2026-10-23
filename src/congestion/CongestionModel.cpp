@@ -7,26 +7,38 @@ double CongestionModel::density(int occupancy, int capacity) const {
     if (capacity <= 0) {
         return 1.0;
     }
-    
+
     double d = static_cast<double>(occupancy) / capacity;
     return std::min(1.0, std::max(0.0, d));
 }
 
 double CongestionModel::speedMultiplier(double density) const {
     double multiplier = 1.0 - density;
-    
+
     if (multiplier < 0.1) {
         multiplier = 0.1;
     }
-    
+
     return multiplier;
+}
+
+int CongestionModel::effectiveCapacity(const Edge& edge) const {
+    // edge.capacity sada znači koliko agenata stane u JEDAN RED po širini hodnika
+    // length određuje koliko takvih redova stane po duljini
+
+    constexpr double agentSpacing = 0.75; // metri između redova agenata
+
+    int rows = std::max(1, static_cast<int>(edge.length / agentSpacing));
+    int totalCapacity = std::max(1, edge.capacity * rows);
+
+    return totalCapacity;
 }
 
 double CongestionModel::congestionPenalty(
     const Edge& edge,
     int occupancy
 ) const {
-    double d = density(occupancy, edge.capacity);
+    double d = density(occupancy, effectiveCapacity(edge));
     return d * edge.traversalTime;
 }
 
@@ -35,20 +47,20 @@ void CongestionModel::update(
     const std::unordered_map<int, Edge>& edges
 ) {
     congestion_.clear();
-    
+
     for (const auto& [edgeId, edge] : edges) {
         EdgeCongestion ec;
         ec.edgeId = edgeId;
-        ec.capacity = edge.capacity;
-        
+        ec.capacity = effectiveCapacity(edge);
+
         auto it = edgeOccupancy.find(edgeId);
         if (it != edgeOccupancy.end()) {
             ec.occupancy = it->second;
         }
-        
+
         ec.density = density(ec.occupancy, ec.capacity);
         ec.speedMultiplier = speedMultiplier(ec.density);
-        
+
         congestion_[edgeId] = ec;
     }
 }
@@ -58,7 +70,7 @@ EdgeCongestion CongestionModel::getEdgeCongestion(int edgeId) const {
     if (it != congestion_.end()) {
         return it->second;
     }
-    
+
     EdgeCongestion empty;
     return empty;
 }
