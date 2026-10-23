@@ -32,6 +32,10 @@ const Edge& BuildingGraph::edge(int id) const {
     return it->second;
 }
 
+const std::unordered_map<int, Edge>& BuildingGraph::edges() const {
+    return edges_;
+}
+
 std::vector<int> BuildingGraph::neighbors(int nodeId) const {
     auto it = adjacency_.find(nodeId);
     if (it == adjacency_.end()) {

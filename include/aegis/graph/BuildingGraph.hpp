@@ -9,6 +9,7 @@ namespace aegis {
 
 class BuildingGraph {
 public:
+    const std::unordered_map<int, Edge>& edges() const;
     void addNode(const Node& node);
     void addEdge(const Edge& edge);
 

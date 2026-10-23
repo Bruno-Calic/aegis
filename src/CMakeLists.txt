@@ -4,7 +4,8 @@ add_library(core
             core/Edge.cpp 
             graph/BuildingGraph.cpp
             pathfinding/PathFinder.cpp
-            simulation/SimulationEngine.cpp)
+            simulation/SimulationEngine.cpp
+            congestion/CongestionModel.cpp)
 
 
 target_include_directories(core PRIVATE ../include)

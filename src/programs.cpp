@@ -93,9 +93,11 @@ int test_1() {
 int test_2(){
     using namespace aegis;
 
+        
     //stvorit scenarij
     Scenario scenario;
     scenario.name = "Test2";
+
 
     //dodaj čvorove
     Node n1{1, NodeType::Room, "Informatika", 0, 0};
@@ -105,8 +107,10 @@ int test_2(){
     Node n5{5, NodeType::Staircase, "stepenice", 2, 2};
     Node n6{6, NodeType::Exit, "Izlaz", 2, 3}; 
 
+
     //Scenario cvorovi
     scenario.nodes = {n1, n2, n3, n4, n5, n6};
+
 
     //dodavanje zidovi
     Edge e1{1, 1, 2, 2.0, 1.0, 0.5, 2, false, false};
@@ -115,8 +119,10 @@ int test_2(){
     Edge e4{4, 4, 5, 6.0, 4.0, 1.5, 4, false, false};
     Edge e5{5, 5, 6, 6.0, 4.0, 2.0, 5, false, true};
 
+
     //Scenario zidove
     scenario.edges = {e1, e2, e3, e4, e5};
+
 
     //dodavanje agenata
     Agent a1;
@@ -128,31 +134,77 @@ int test_2(){
     a2.currentNode = 2;
     a2.state = AgentState::Initial;
 
+
     //Scenario agenti
     scenario.agents = {a1, a2};
 
-    //pokretanje simulacije
+
+        //pokretanje simulacije
     SimulationEngine engine;
     engine.initialize(scenario);
-    
+
     std::cout << "=== Aegis Simulacija ===\n";
     std::cout << "Scenarij: " << scenario.name << "\n";
     std::cout << "========================\n\n";
 
+
     //simulacija i obrada
-    engine.runUntilFinished();
+    int korak = 0;
+    while (!engine.isFinished()) {
+        korak++;
+        
+        // Pokreni korak
+        engine.step(0.25);
+        
+        // Ispiši stanje
+        std::cout << "KORAK " << korak << " | Vrijeme: " 
+                << engine.state().currentTime << " s\n";
+        
+        // Ispiši poziciju agenata
+        for (const auto& agent : engine.state().agents) {
+            std::cout << "  Agent " << agent.id 
+                    << " je na čvoru " << agent.currentNode;
+            
+            if (agent.state == AgentState::Evacuated) {
+                std::cout << " [EVAKUIRAN]";
+            } else if (agent.state == AgentState::Trapped) {
+                std::cout << " [ZAROBLJEN]";
+            } else if (agent.state == AgentState::Waiting) {
+                std::cout << " [ČEKA]";
+            } else {
+                std::cout << " [KREĆE SE]";
+            }
+            
+            std::cout << "\n";
+        }
+        
+        // Ispiši gužvu na bridovima
+        std::cout << "  Gužva:\n";
+        for (const auto& edge : engine.state().edges) {
+            auto congestion = engine.getEdgeCongestion(edge.id);
+            std::cout << "    Brid " << edge.id << ": " 
+                    << congestion.occupancy << "/" << congestion.capacity 
+                    << " (gustoća: " << congestion.density << ")\n";
+        }
+        
+        std::cout << "\n";
+    }
+
 
     //OBRADA//
+
 
     if(engine.isFinished()){
         std::cout << "Simulacija je završila.\n";
         std::cout << "Ukupno vrijeme: " << engine.state().currentTime << " s\n";
         std::cout << "Evakuirano: " << engine.state().evacuatedCount << "\n";
         std::cout << "Zarobljeno: " << engine.state().trappedCount << "\n";
-        std::cout << "Ukupno koraka: " << engine.state().currentTime / 0.25 << "\n";
+        std::cout << "Ukupno koraka: " << korak << "\n";
+        
     } else {
         std::cout << "Simulacija još uvijek traje.\n";
     }
+
 
     return 0;
 }

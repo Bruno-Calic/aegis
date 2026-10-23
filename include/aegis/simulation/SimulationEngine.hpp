@@ -3,6 +3,8 @@
 #include "aegis/Scenario.hpp"
 #include "aegis/graph/BuildingGraph.hpp"
 #include "aegis/pathfinding/PathFinder.hpp"
+#include "aegis/congestion/CongestionModel.hpp"
+#include <unordered_map>
 
 namespace aegis {
 
@@ -15,6 +17,9 @@ struct SimulationState {
     std::vector<Edge> edges;
     std::vector<Agent> agents;
     std::vector<int> exits;
+
+    // NOVO: Praćenje zauzeća bridova
+    std::unordered_map<int, int> edgeOccupancy;
 
     int evacuatedCount = 0;
     int trappedCount = 0;
@@ -29,10 +34,14 @@ public:
     const SimulationState& state() const;
     bool isFinished() const;
 
+    // NOVO: Dohvati gužvu za brid
+    EdgeCongestion getEdgeCongestion(int edgeId) const;
+
 private:
     SimulationState state_;
     BuildingGraph graph_;
     PathFinder pathFinder_;
+    CongestionModel congestionModel_;
 };
 
 }
