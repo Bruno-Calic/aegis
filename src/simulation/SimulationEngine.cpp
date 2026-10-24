@@ -58,7 +58,7 @@ void SimulationEngine::step(double deltaTime) {
 
     state_.currentTime += deltaTime;
 
-    // 1) Ažuriraj congestion prema trenutnom occupancy-ju
+    // 1) Ažuriraj gužvu prema trenutnom zauzeću
     congestionModel_.update(state_.edgeOccupancy, graph_.edges());
 
     // 2) Agenti koji su već na bridu napreduju
@@ -99,8 +99,52 @@ void SimulationEngine::step(double deltaTime) {
         }
     }
 
-    // 3) Ponovno ažuriraj congestion nakon izlazaka s bridova
+    // 3) Ponovno ažuriraj gužvu nakon izlazaka s bridova
     congestionModel_.update(state_.edgeOccupancy, graph_.edges());
+
+    // Privremene rezervacije za ovaj korak
+    std::unordered_map<int, int> plannedOccupancy;
+    for (const auto& edge : state_.edges) {
+        plannedOccupancy[edge.id] = 0;
+    }
+
+    // Parametar koliko jako agenti izbjegavaju gužvu
+    constexpr double congestionWeight = 2.0;
+
+    // Funkcija dinamičke cijene brida:
+    // uključuje trenutnu gužvu + planirane rezervacije
+    auto dynamicEdgeCost =
+        [&](const Edge& edge) -> double {
+            EdgeCongestion congestion =
+                congestionModel_.getEdgeCongestion(edge.id);
+
+            int effectiveCap = congestionModel_.effectiveCapacity(edge);
+            if (effectiveCap <= 0) {
+                effectiveCap = 1;
+            }
+
+            int planned = 0;
+            auto it = plannedOccupancy.find(edge.id);
+            if (it != plannedOccupancy.end()) {
+                planned = it->second;
+            }
+
+            int totalLoad = congestion.occupancy + planned;
+            double density = static_cast<double>(totalLoad) / effectiveCap;
+            if (density < 0.0) density = 0.0;
+            if (density > 1.0) density = 1.0;
+
+            double multiplier = 1.0 - density;
+            if (multiplier < 0.1) {
+                multiplier = 0.1;
+            }
+
+            // Osnovno vrijeme + kazna za gužvu
+            double base = edge.traversalTime;
+            double congestionPenalty = base * congestionWeight * density;
+
+            return base + congestionPenalty;
+        };
 
     struct MoveIntent {
         std::size_t agentIndex;
@@ -145,7 +189,13 @@ void SimulationEngine::step(double deltaTime) {
 
         PathResult bestPath;
         for (int exitId : state_.exits) {
-            PathResult path = pathFinder_.dijkstra(graph_, agent.currentNode, exitId);
+            PathResult path = pathFinder_.dijkstra(
+                graph_,
+                agent.currentNode,
+                exitId,
+                dynamicEdgeCost
+            );
+
             if (path.found) {
                 if (!bestPath.found || path.totalCost < bestPath.totalCost) {
                     bestPath = path;
@@ -191,15 +241,29 @@ void SimulationEngine::step(double deltaTime) {
             nextNode,
             nextEdge->traversalTime
         });
+
+        // Rezerviraj mjesto na cijeloj odabranoj ruti
+        for (std::size_t k = agent.pathIndex + 1; k < agent.path.size(); ++k) {
+            int fromNode = agent.path[k - 1];
+            int toNode = agent.path[k];
+
+            for (const auto& edge : state_.edges) {
+                if ((edge.from == fromNode && edge.to == toNode) ||
+                    (!edge.directed && edge.from == toNode && edge.to == fromNode)) {
+                    plannedOccupancy[edge.id]++;
+                    break;
+                }
+            }
+        }
     }
 
-    // 5) Grupiranje zahtjeva po bridu
+    // 5) Grupiraj zahtjeve po bridu
     std::unordered_map<int, std::vector<MoveIntent>> intentsByEdge;
     for (const auto& intent : intents) {
         intentsByEdge[intent.edgeId].push_back(intent);
     }
 
-    // 6) Svi agenti na čvorovima su privremeno Waiting dok se ne riješe ulazi
+    // 6) Agenti na čvorovima privremeno čekaju dok se ne riješe ulazi
     for (auto& agent : state_.agents) {
         if (agent.state != AgentState::Evacuated &&
             agent.state != AgentState::Trapped &&
@@ -272,7 +336,7 @@ void SimulationEngine::step(double deltaTime) {
         }
     }
 
-    // 9) Završni update congestiona za GUI
+    // 9) Završno ažuriranje congestiona za GUI
     congestionModel_.update(state_.edgeOccupancy, graph_.edges());
 
     int activeCount = 0;

@@ -9,7 +9,8 @@ namespace aegis {
 PathResult PathFinder::dijkstra(
     const BuildingGraph& graph,
     int startNode,
-    int targetNode
+    int targetNode,
+    EdgeCostFunction edgeCost
 ) const {
     PathResult result;
 
@@ -33,8 +34,6 @@ PathResult PathFinder::dijkstra(
         auto [d, u] = pq.top();
         pq.pop();
 
-        // POPRAVAK: dist[u] može biti default (0.0) ako čvor nije bio u mapi,
-        // pa koristimo find() umjesto operator[].
         auto du = dist.find(u);
         if (du == dist.end() || d > du->second) {
             continue;
@@ -50,9 +49,16 @@ PathResult PathFinder::dijkstra(
             }
 
             int v = (edge.from == u) ? edge.to : edge.from;
-            Dist newDist = du->second + edge.traversalTime;  // at() umjesto []
 
-            // POPRAVAK: dist[v] preko operator[] default-konstruira na 0.0, ne INF.
+            double cost;
+            if (edgeCost) {
+                cost = edgeCost(edge);
+            } else {
+                cost = edge.traversalTime;
+            }
+
+            Dist newDist = du->second + cost;
+
             auto it = dist.find(v);
             if (it == dist.end() || newDist < it->second) {
                 dist[v] = newDist;
@@ -83,12 +89,13 @@ PathResult PathFinder::dijkstra(
 PathResult PathFinder::bestPathToAnyExit(
     const BuildingGraph& graph,
     int startNode,
-    const std::vector<int>& exits
+    const std::vector<int>& exits,
+    EdgeCostFunction edgeCost
 ) const {
     PathResult best;
 
     for (int exitNode : exits) {
-        PathResult r = dijkstra(graph, startNode, exitNode);
+        PathResult r = dijkstra(graph, startNode, exitNode, edgeCost);
         if (r.found && (!best.found || r.totalCost < best.totalCost)) {
             best = r;
         }
