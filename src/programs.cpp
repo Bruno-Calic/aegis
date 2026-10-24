@@ -279,16 +279,19 @@ int test_4() {
     Node n4{4, NodeType::Room,      "Razredna",    2, 1};
     Node n5{5, NodeType::Staircase, "Stepenice2",  2, 2};
     Node n6{6, NodeType::Exit,      "Izlaz",       2, 3};
+    Node n7{7, NodeType::Room,      "Soba1",       0, 1};
 
-    scenario.nodes = {n1, n2, n3, n4, n5, n6};
+    scenario.nodes = {n1, n2, n3, n4, n5, n6, n7};
 
-    Edge e1{1, 1, 2, 2.0, 1.0, 0.5, 2, false, false};
+    Edge e1{1, 1, 2, 2.0, 1.0, 0.5, 2, true, false};
     Edge e2{2, 2, 3, 8.0, 4.0, 2.0, 6, false, false};
     Edge e3{3, 3, 4, 6.0, 4.0, 2.3, 5, false, false};
     Edge e4{4, 4, 5, 6.0, 4.0, 1.5, 4, false, false};
     Edge e5{5, 5, 6, 6.0, 4.0, 2.0, 5, false, false};
+    Edge e6{6, 1, 7, 2.0, 1.0, 0.5, 2, false, false}; 
+    Edge e7{7, 7, 3, 2.0, 1.0, 0.5, 2, false, false}; 
 
-    scenario.edges = {e1, e2, e3, e4, e5};
+    scenario.edges = {e1, e2, e3, e4, e5, e6, e7};
 
     Agent a1;
     a1.id = 1;
